@@ -6,6 +6,6 @@ export default defineConfig({
   server: {
     port: 5173,
     // In development the console talks to the backend through this proxy.
-    proxy: { '/v1': 'http://localhost:8080' },
+    proxy: { '/v1': process.env.VITE_PROXY_TARGET ?? 'http://localhost:8080' },
   },
 });

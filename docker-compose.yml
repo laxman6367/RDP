@@ -1,0 +1,52 @@
+# Local development stack: PostgreSQL + backend API + console.
+#   docker compose up --build
+# Console: http://localhost:5173   API: http://localhost:8080
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: redcore
+      POSTGRES_PASSWORD: redcore
+      POSTGRES_DB: redcore
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U redcore']
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://redcore:redcore@postgres:5432/redcore
+      PUBLIC_BASE_URL: http://localhost:8080
+      CORS_ORIGINS: http://localhost:5173
+      # Development only. Production requires JWT_SECRET, a command signing key and HTTPS.
+      REQUIRE_MFA: 'true'
+    volumes:
+      - blobs:/app/var
+    ports:
+      - '8080:8080'
+
+  console:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npx vite --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_PROXY_TARGET: http://backend:8080
+    volumes:
+      - ./console:/app
+      - console_node_modules:/app/node_modules
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  blobs:
+  console_node_modules:

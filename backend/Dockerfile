@@ -13,6 +13,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY migrations ./migrations
 COPY package.json ./
+RUN mkdir -p /app/var && chown node:node /app/var
 USER node
 EXPOSE 8080
 CMD ["node", "dist/main.js"]
